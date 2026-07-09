@@ -95,6 +95,20 @@ function sendCustomerStatusEmail(data) {
   const when = `${data.booking_date} at ${data.start_time}`;
   const isConfirmed = data.status === 'confirmed';
   const bookingUrl = hasSiteUrl() ? siteUrl('booking.html') : null;
+  const waiverUrl = hasSiteUrl()
+    ? siteUrl(`waiver.html?id=${encodeURIComponent(data.id || '')}&name=${encodeURIComponent(data.name || '')}&email=${encodeURIComponent(data.email || '')}`)
+    : null;
+  const paymentUrl = hasSiteUrl()
+    ? siteUrl(`payment.html?${[
+        `venue=${encodeURIComponent(data.venue || '')}`,
+        data.court_type ? `court_type=${encodeURIComponent(data.court_type)}` : '',
+        data.sport_type ? `sport_type=${encodeURIComponent(data.sport_type)}` : '',
+        `date=${encodeURIComponent(data.booking_date || '')}`,
+        `start_time=${encodeURIComponent(data.start_time || '')}`,
+        `duration_hours=${encodeURIComponent(data.duration_hours || '')}`,
+        `name=${encodeURIComponent(data.name || '')}`,
+      ].filter(Boolean).join('&')}`)
+    : null;
 
   const subject = isConfirmed
     ? `Your Aulga Citi booking is confirmed — ${data.booking_date}`
@@ -108,6 +122,12 @@ function sendCustomerStatusEmail(data) {
         '',
         `Venue: ${venueLabel}${court}`,
         `Date: ${when}, for ${data.duration_hours} hour(s)`,
+        '',
+        'To finalize your booking, please complete payment:',
+        paymentUrl || '(open the payment page on our website)',
+        '',
+        'Also please fill out the liability waiver for your group before your visit:',
+        waiverUrl || '(open the waiver page on our website)',
         '',
         'We look forward to hosting you. Reach out if anything changes.',
       ]
@@ -135,6 +155,13 @@ function sendCustomerStatusEmail(data) {
           <tr><td style="padding:4px 12px 4px 0; color:#6b7280;">Date</td><td style="padding:4px 0;">${data.booking_date}</td></tr>
           <tr><td style="padding:4px 12px 4px 0; color:#6b7280;">Time</td><td style="padding:4px 0;">${data.start_time} for ${data.duration_hours} hr(s)</td></tr>
         </table>
+        ${paymentUrl
+          ? `<a href="${paymentUrl}" style="display:inline-block; background:#d97706; color:#ffffff; text-decoration:none; font-weight:bold; padding:12px 22px; border-radius:999px; margin: 4px 8px 4px 0;">Complete Payment</a>`
+          : ''}
+        ${waiverUrl
+          ? `<a href="${waiverUrl}" style="display:inline-block; background:#334155; color:#ffffff; text-decoration:none; font-weight:bold; padding:12px 22px; border-radius:999px; margin: 4px 0;">Sign Liability Waiver</a>`
+          : ''}
+        <p style="color:#6b7280; font-size:13px; margin-top:16px;">Please complete payment and the waiver before your visit.</p>
         <p style="color:#6b7280; font-size:13px;">We look forward to hosting you. Reach out if anything changes.</p>
       </div>
     `

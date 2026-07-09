@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Complete Payment | Aulga Citi</title>
+<meta name="description" content="Complete payment for your confirmed Aulga Citi booking.">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect x='4' y='4' width='92' height='92' rx='16' fill='%23ffffff' stroke='%23111827' stroke-width='8'/%3E%3Cpolygon points='16,84 30,52 44,84' fill='%235aa9d8'/%3E%3Cpolygon points='38,84 48,30 58,84' fill='%23f2ce4e'/%3E%3Crect x='41' y='55' width='10' height='29' fill='%23b8403f'/%3E%3Cpolygon points='41,55 46,44 51,55' fill='%23b8403f'/%3E%3Cpolygon points='55,86 62,54 69,66 76,54 83,86' fill='%235aa9d8'/%3E%3Crect x='71' y='58' width='16' height='30' fill='%234f9d95'/%3E%3Crect x='75' y='65' width='4' height='4' fill='%23ffffff'/%3E%3Crect x='75' y='73' width='4' height='4' fill='%23ffffff'/%3E%3Crect x='75' y='81' width='4' height='4' fill='%23ffffff'/%3E%3Crect x='82' y='65' width='3' height='3' fill='%238c2f36'/%3E%3Crect x='82' y='72' width='3' height='3' fill='%238c2f36'/%3E%3C/svg%3E">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        fontFamily: {
+          display: ['Poppins', 'sans-serif'],
+          body: ['Inter', 'sans-serif'],
+        },
+        colors: { amber: { 600: '#d97706' } }
+      }
+    }
+  }
+</script>
+<style>
+  body { font-family: 'Inter', sans-serif; }
+  h1, h2, h3, .font-display { font-family: 'Poppins', sans-serif; }
+</style>
+</head>
+<body class="bg-slate-950 text-slate-300 antialiased">
+
+  <!-- Header -->
+  <header class="sticky top-0 z-50 bg-slate-950/90 backdrop-blur border-b border-slate-800">
+    <div class="max-w-3xl mx-auto px-6 py-4 flex items-center justify-between">
+      <a href="index.html" class="flex items-center gap-2.5">
+        <svg viewBox="0 0 100 100" class="h-9 w-9 shrink-0" aria-hidden="true">
+          <rect x="4" y="4" width="92" height="92" rx="6" fill="#ffffff" stroke="#111827" stroke-width="6"/>
+          <clipPath id="logoClip"><rect x="8" y="8" width="84" height="84" rx="3"/></clipPath>
+          <g clip-path="url(#logoClip)">
+            <polygon points="16,84 30,52 44,84" fill="#5aa9d8"/>
+            <polygon points="38,84 48,30 58,84" fill="#f2ce4e"/>
+            <rect x="41" y="55" width="10" height="29" fill="#b8403f"/>
+            <polygon points="41,55 46,44 51,55" fill="#b8403f"/>
+            <polygon points="55,86 62,54 69,66 76,54 83,86" fill="#5aa9d8"/>
+            <rect x="71" y="58" width="16" height="30" fill="#4f9d95"/>
+            <rect x="75" y="65" width="4" height="4" fill="#ffffff"/>
+            <rect x="75" y="73" width="4" height="4" fill="#ffffff"/>
+            <rect x="75" y="81" width="4" height="4" fill="#ffffff"/>
+            <rect x="82" y="65" width="3" height="3" fill="#8c2f36"/>
+            <rect x="82" y="72" width="3" height="3" fill="#8c2f36"/>
+          </g>
+        </svg>
+        <span class="font-display font-extrabold text-xl tracking-tight text-white">
+          AULGA <span class="text-amber-500">CITI</span>
+        </span>
+      </a>
+      <a href="index.html" class="text-sm font-medium text-slate-400 hover:text-amber-500 transition">&larr; Back to site</a>
+    </div>
+  </header>
+
+  <main class="max-w-3xl mx-auto px-6 py-14 md:py-20">
+    <div class="text-center max-w-xl mx-auto mb-10">
+      <p class="uppercase tracking-[0.2em] text-amber-500 text-xs font-semibold mb-3">Last step</p>
+      <h1 class="font-display font-bold text-3xl md:text-4xl text-white mb-4">Complete Your Payment</h1>
+      <p class="text-slate-400 text-sm">Your booking is confirmed — pay via GCash QR or bank transfer, then send us proof to lock it in.</p>
+    </div>
+
+    <!-- Booking summary -->
+    <div class="bg-slate-900 rounded-2xl border border-slate-800 p-7 mb-6">
+      <p class="text-xs uppercase tracking-wide text-amber-500 font-semibold mb-1">Booking</p>
+      <p id="summaryVenue" class="font-display font-semibold text-white text-lg mb-1">—</p>
+      <p id="summaryWhen" class="text-sm text-slate-400">—</p>
+    </div>
+
+    <!-- Price -->
+    <div class="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-7 mb-8">
+      <p class="text-xs uppercase tracking-wide text-amber-400 font-semibold mb-1">Amount due</p>
+      <p id="priceAmount" class="font-display font-extrabold text-4xl text-white mb-2">—</p>
+      <p id="priceNote" class="text-sm text-amber-200/90">—</p>
+    </div>
+
+    <!-- Payment methods -->
+    <div class="bg-slate-900 rounded-2xl border border-slate-800 p-7 mb-6">
+      <h2 class="font-display font-semibold text-white text-lg mb-1">Pay via QR code</h2>
+      <p class="text-xs text-slate-500 mb-5">Scan with your GCash, banking app, or any InstaPay-enabled app, then screenshot your payment confirmation.</p>
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <div class="aspect-square bg-white rounded-xl border-2 border-slate-700 p-4 flex items-center justify-center overflow-hidden">
+            <img src="img/gcash-qr-1.jpg" alt="Aulga Citi GCash QR code" class="max-h-full max-w-full object-contain">
+          </div>
+          <p class="text-xs text-slate-500 text-center mt-2">GCash</p>
+        </div>
+        <div>
+          <div class="aspect-square bg-white rounded-xl border-2 border-slate-700 p-4 flex items-center justify-center overflow-hidden">
+            <img src="img/gcash-qr-2.jpg" alt="Aulga Citi MariBank QR code" class="max-h-full max-w-full object-contain">
+          </div>
+          <p class="text-xs text-slate-500 text-center mt-2">MariBank</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-slate-900 rounded-2xl border border-slate-800 p-7 mb-8">
+      <h2 class="font-display font-semibold text-white text-lg mb-1">Or pay via bank transfer</h2>
+      <p class="text-xs text-slate-500 mb-5">Send to the account below and screenshot your receipt.</p>
+      <ul class="space-y-2 text-sm">
+        <li class="flex justify-between border-b border-slate-800 pb-2"><span class="text-slate-400">Bank</span><span class="text-white font-medium">Maribank</span></li>
+        <li class="flex justify-between border-b border-slate-800 pb-2"><span class="text-slate-400">Account Name</span><span class="text-white font-medium">Euniza Aulga Gonzalez</span></li>
+        <li class="flex justify-between"><span class="text-slate-400">Account Number</span><span class="text-white font-medium">11053800620</span></li>
+      </ul>
+    </div>
+
+    <!-- Finalize instructions -->
+    <div class="bg-slate-900 rounded-2xl border border-slate-800 p-7">
+      <h2 class="font-display font-semibold text-white text-lg mb-2">Finalize your booking</h2>
+      <p class="text-sm text-slate-400 mb-5">Once you've paid, send us a screenshot of your payment confirmation via Facebook Messenger or email — your booking isn't finalized until we receive it.</p>
+      <div class="flex flex-col sm:flex-row gap-3">
+        <a href="https://www.facebook.com/profile.php?id=100088879006523" target="_blank" rel="noopener" class="flex items-center justify-center gap-2 flex-1 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white font-semibold py-3 rounded-full transition">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M22 12.06C22 6.5 17.52 2 12 2S2 6.5 2 12.06c0 5.02 3.66 9.18 8.44 9.94v-7.03H7.9v-2.91h2.54V9.85c0-2.51 1.49-3.9 3.77-3.9 1.09 0 2.24.2 2.24.2v2.46h-1.26c-1.24 0-1.63.77-1.63 1.56v1.87h2.78l-.44 2.91h-2.34V22c4.78-.76 8.44-4.92 8.44-9.94z"/></svg>
+          Message us on Facebook
+        </a>
+        <a id="emailUsBtn" href="mailto:eunizasollano@gmail.com" class="flex items-center justify-center gap-2 flex-1 bg-amber-600 hover:bg-amber-500 text-white font-semibold py-3 rounded-full transition">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+          Email us
+        </a>
+      </div>
+    </div>
+  </main>
+
+  <footer class="border-t border-slate-800 text-slate-500 text-xs py-8 px-6 text-center">
+    &copy; 2026 Aulga Citi. All rights reserved.
+  </footer>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const venue = params.get('venue') || 'event_center';
+    const courtType = params.get('court_type') || null;
+    const sportType = params.get('sport_type') || null;
+    const bookingDate = params.get('date') || '';
+    const startTime = params.get('start_time') || '';
+    const durationHours = Number(params.get('duration_hours') || 0);
+    const name = params.get('name') || '';
+
+    const venueLabel = venue === 'sports' ? 'Aulga Citi Sports' : 'Aulga Citi Event Center';
+
+    function describeCourt() {
+      if (!courtType) return '';
+      if (courtType === 'event') return ' (Event)';
+      const sport = sportType ? ` - ${sportType}` : '';
+      return ` (${courtType} court${sport})`;
+    }
+
+    function computePrice() {
+      if (venue === 'event_center') {
+        const total = 15000;
+        const downPayment = total * 0.5;
+        return {
+          text: `₱${downPayment.toLocaleString()}`,
+          note: `50% down payment to reserve your slot. Total rental is ₱${total.toLocaleString()} (flat rate for a 4-hour block, negotiable for smaller events) — the remaining ₱${(total - downPayment).toLocaleString()} balance is due on the event day.`,
+        };
+      }
+      if (courtType === 'event') {
+        return {
+          text: 'Quote pending',
+          note: "Pricing for sports-center events is arranged individually — we'll follow up with a quote before payment.",
+        };
+      }
+      const rate = courtType === 'half' ? 400 : 800;
+      const total = rate * (durationHours || 1);
+      return {
+        text: `₱${total.toLocaleString()}`,
+        note: `₱${rate}/hr × ${durationHours || 1} hour(s), ${courtType === 'half' ? 'half' : 'full'} court.`,
+      };
+    }
+
+    document.getElementById('summaryVenue').textContent = `${venueLabel}${describeCourt()}`;
+
+    if (bookingDate) {
+      const label = new Date(bookingDate + 'T00:00:00').toLocaleDateString('en-US', {
+        weekday: 'long', month: 'long', day: 'numeric', year: 'numeric'
+      });
+      const timeLabel = startTime ? ` at ${startTime}` : '';
+      const durLabel = durationHours ? `, for ${durationHours} hour(s)` : '';
+      document.getElementById('summaryWhen').textContent = `${label}${timeLabel}${durLabel}`;
+    } else {
+      document.getElementById('summaryWhen').textContent = name ? `Booked by ${name}` : '';
+    }
+
+    const price = computePrice();
+    document.getElementById('priceAmount').textContent = price.text;
+    document.getElementById('priceNote').textContent = price.note;
+
+    const emailSubject = `Payment for my Aulga Citi booking — ${bookingDate || ''}`;
+    document.getElementById('emailUsBtn').href =
+      `mailto:eunizasollano@gmail.com?subject=${encodeURIComponent(emailSubject)}`;
+  </script>
+</body>
+</html>

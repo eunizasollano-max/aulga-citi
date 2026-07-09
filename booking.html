@@ -137,16 +137,38 @@
             </div>
           </div>
 
-          <div class="grid grid-cols-2 gap-4">
+          <!-- Event Center: plain time + duration -->
+          <div id="eventCenterTimeFields" class="grid grid-cols-2 gap-4">
             <div>
-              <label for="startTime" class="block text-sm font-semibold text-slate-300 mb-1.5">Start time</label>
-              <input id="startTime" type="time" required style="color-scheme: dark;" class="w-full rounded-lg bg-slate-800 border border-slate-700 text-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500">
+              <label for="ecStartTime" class="block text-sm font-semibold text-slate-300 mb-1.5">Start time</label>
+              <input id="ecStartTime" type="time" style="color-scheme: dark;" class="w-full rounded-lg bg-slate-800 border border-slate-700 text-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500">
             </div>
             <div>
-              <label for="durationHours" class="block text-sm font-semibold text-slate-300 mb-1.5">Duration (hrs)</label>
-              <input id="durationHours" type="number" min="1" max="12" step="1" required class="w-full rounded-lg bg-slate-800 border border-slate-700 text-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500">
+              <label for="ecDuration" class="block text-sm font-semibold text-slate-300 mb-1.5">Duration (hrs)</label>
+              <input id="ecDuration" type="number" min="1" max="12" step="1" value="4" class="w-full rounded-lg bg-slate-800 border border-slate-700 text-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500">
             </div>
           </div>
+
+          <!-- Sports: hourly availability grid -->
+          <div id="sportsTimeFields" class="hidden space-y-3">
+            <div>
+              <label class="block text-sm font-semibold text-slate-300 mb-1.5">Select a start hour</label>
+              <div id="hourGrid" class="grid grid-cols-4 gap-2"></div>
+              <div class="flex flex-wrap gap-x-4 gap-y-1.5 mt-3 text-xs text-slate-400">
+                <span class="flex items-center gap-1.5"><span class="h-2 w-2 rounded-full bg-emerald-500"></span> Open</span>
+                <span class="flex items-center gap-1.5"><span class="h-2 w-2 rounded-full bg-amber-500"></span> Pending</span>
+                <span class="flex items-center gap-1.5"><span class="h-2 w-2 rounded-full bg-red-500"></span> Booked</span>
+              </div>
+              <p id="hourConflictWarning" class="hidden text-xs text-amber-400 mt-2">Heads up — your selected duration overlaps an hour that's already booked.</p>
+            </div>
+            <div>
+              <label for="sportsDuration" class="block text-sm font-semibold text-slate-300 mb-1.5">Duration (hrs)</label>
+              <input id="sportsDuration" type="number" min="1" max="12" step="1" value="1" class="w-full rounded-lg bg-slate-800 border border-slate-700 text-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500">
+            </div>
+          </div>
+
+          <input type="hidden" id="startTime">
+          <input type="hidden" id="durationHours">
 
           <div id="guestCountField">
             <label for="guestCount" class="block text-sm font-semibold text-slate-300 mb-1.5">Guest count</label>
@@ -203,12 +225,15 @@
   <script src="js/supabase-client.js"></script>
   <script>
     const VENUE_LABELS = { event_center: 'Aulga Citi Event Center', sports: 'Aulga Citi Sports' };
+    const OPEN_HOUR = 8;   // 8am
+    const CLOSE_HOUR = 24; // last bookable hour starts at 11pm (23:00-24:00)
     const state = {
       venue: 'event_center',
       viewYear: new Date().getFullYear(),
       viewMonth: new Date().getMonth(),
       availability: [], // rows from get_availability
       selectedDate: null, // 'YYYY-MM-DD'
+      selectedHour: null, // sports only: integer hour, e.g. 9
     };
 
     const todayStr = () => new Date().toISOString().split('T')[0];
@@ -226,11 +251,30 @@
           (active ? 'bg-amber-600 border-amber-600 text-white' : 'bg-slate-900 border-slate-700 text-slate-300 hover:border-amber-500/40');
       });
       document.getElementById('sportsFields').classList.toggle('hidden', venue !== 'sports');
-      document.getElementById('durationHours').value = venue === 'sports' ? 1 : 4;
-      if (venue === 'sports') document.getElementById('courtType').value = 'full';
+      document.getElementById('eventCenterTimeFields').classList.toggle('hidden', venue === 'sports');
+      document.getElementById('sportsTimeFields').classList.toggle('hidden', venue !== 'sports');
+      state.selectedHour = null;
+      if (venue === 'sports') {
+        document.getElementById('courtType').value = 'full';
+        document.getElementById('sportsDuration').value = 1;
+        syncSportsTime();
+      } else {
+        document.getElementById('ecDuration').value = 4;
+        syncEventCenterTime();
+      }
       updateCourtSubfields();
       resetPanel();
       loadAvailability();
+    }
+
+    function syncEventCenterTime() {
+      document.getElementById('startTime').value = document.getElementById('ecStartTime').value;
+      document.getElementById('durationHours').value = document.getElementById('ecDuration').value;
+    }
+
+    function syncSportsTime() {
+      document.getElementById('startTime').value = state.selectedHour !== null ? hourToTimeStr(state.selectedHour) : '';
+      document.getElementById('durationHours').value = document.getElementById('sportsDuration').value;
     }
 
     function updateCourtSubfields() {
@@ -271,9 +315,9 @@
       if (state.venue === 'event_center') {
         return rows.some(r => r.status === 'confirmed') ? 'full' : 'partial';
       }
-      // sports: sum booked hours, court open roughly 8am-10pm (14 hrs)
+      // sports: sum booked hours, court open 8am-12am (16 hrs)
       const bookedHours = rows.reduce((sum, r) => sum + Number(r.duration_hours), 0);
-      if (bookedHours >= 14) return 'full';
+      if (bookedHours >= (CLOSE_HOUR - OPEN_HOUR)) return 'full';
       return 'partial';
     }
 
@@ -328,6 +372,7 @@
 
     function selectDate(dateStr) {
       state.selectedDate = dateStr;
+      state.selectedHour = null;
       renderCalendar();
 
       document.getElementById('noDateSelected').classList.add('hidden');
@@ -354,12 +399,92 @@
           return `<p class="text-xs text-slate-400">${r.start_time.slice(0,5)} &middot; ${r.duration_hours}hr${court} &mdash; ${badge}</p>`;
         }).join('');
       }
+
+      if (state.venue === 'sports') {
+        syncSportsTime();
+        renderHourGrid();
+      }
+    }
+
+    function hourLabel(h) {
+      const period = h < 12 ? 'AM' : 'PM';
+      const displayHour = h % 12 === 0 ? 12 : h % 12;
+      return `${displayHour} ${period}`;
+    }
+
+    function hourToTimeStr(h) {
+      return `${String(h).padStart(2, '0')}:00`;
+    }
+
+    function hourStatus(dateStr, hour) {
+      const rows = state.availability.filter(r => r.booking_date === dateStr);
+      let result = 'open';
+      for (const r of rows) {
+        const rStart = parseInt(r.start_time.slice(0, 2), 10);
+        const rEnd = rStart + Number(r.duration_hours);
+        if (hour >= rStart && hour < rEnd) {
+          if (r.status === 'confirmed') return 'booked';
+          result = 'pending';
+        }
+      }
+      return result;
+    }
+
+    function renderHourGrid() {
+      const grid = document.getElementById('hourGrid');
+      grid.innerHTML = '';
+      const duration = Number(document.getElementById('sportsDuration').value) || 1;
+      let hasConflict = false;
+
+      for (let h = OPEN_HOUR; h < CLOSE_HOUR; h++) {
+        const status = state.selectedDate ? hourStatus(state.selectedDate, h) : 'open';
+        const inSelectedRange = state.selectedHour !== null && h >= state.selectedHour && h < state.selectedHour + duration;
+        if (inSelectedRange && status === 'booked') hasConflict = true;
+
+        let classes = 'h-11 rounded-lg text-xs font-semibold flex items-center justify-center transition ';
+        let disabled = false;
+        if (status === 'booked') {
+          classes += 'bg-red-500/10 text-red-400 cursor-not-allowed';
+          disabled = true;
+        } else if (status === 'pending') {
+          classes += 'bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 cursor-pointer';
+        } else {
+          classes += 'bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 cursor-pointer';
+        }
+        if (inSelectedRange) {
+          classes += ' ring-2 ring-amber-500';
+        }
+
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.textContent = hourLabel(h);
+        btn.className = classes;
+        btn.disabled = disabled;
+        if (!disabled) {
+          btn.addEventListener('click', () => selectHour(h));
+        }
+        grid.appendChild(btn);
+      }
+
+      document.getElementById('hourConflictWarning').classList.toggle('hidden', !hasConflict);
+    }
+
+    function selectHour(h) {
+      state.selectedHour = h;
+      syncSportsTime();
+      renderHourGrid();
     }
 
     document.querySelectorAll('.venue-tab').forEach(btn => {
       btn.addEventListener('click', () => setVenue(btn.dataset.venue));
     });
     document.getElementById('courtType').addEventListener('change', updateCourtSubfields);
+    document.getElementById('ecStartTime').addEventListener('change', syncEventCenterTime);
+    document.getElementById('ecDuration').addEventListener('change', syncEventCenterTime);
+    document.getElementById('sportsDuration').addEventListener('change', () => {
+      syncSportsTime();
+      renderHourGrid();
+    });
 
     document.getElementById('prevMonth').addEventListener('click', () => {
       state.viewMonth -= 1;
@@ -393,11 +518,23 @@
       const errorEl = document.getElementById('formError');
       errorEl.classList.add('hidden');
 
+      const isSports = state.venue === 'sports';
+
+      if (isSports && state.selectedHour === null) {
+        errorEl.textContent = 'Please select a start hour on the grid above.';
+        errorEl.classList.remove('hidden');
+        return;
+      }
+      if (!isSports && !document.getElementById('ecStartTime').value) {
+        errorEl.textContent = 'Please choose a start time.';
+        errorEl.classList.remove('hidden');
+        return;
+      }
+
       const submitBtn = document.getElementById('submitBtn');
       submitBtn.disabled = true;
       submitBtn.textContent = 'Submitting…';
 
-      const isSports = state.venue === 'sports';
       const courtType = isSports ? document.getElementById('courtType').value : null;
       const showsGuestCount = !isSports || courtType === 'event';
 

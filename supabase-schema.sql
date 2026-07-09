@@ -103,6 +103,33 @@ $$;
 
 grant execute on function get_availability(text) to anon;
 
+-- Signed liability waivers, linked to the booking they belong to.
+create table if not exists waivers (
+  id uuid primary key default gen_random_uuid(),
+  booking_id uuid references bookings(id) on delete set null,
+  lead_name text not null,
+  lead_email text,
+  member_names text[] not null,
+  signature text not null,
+  created_at timestamptz not null default now()
+);
+
+alter table waivers enable row level security;
+
+-- Anyone with the waiver link (sent only in the confirmation email) can submit one.
+drop policy if exists "anon can submit waiver" on waivers;
+create policy "anon can submit waiver"
+  on waivers for insert
+  to anon
+  with check (true);
+
+-- Only the logged-in admin can view submitted waivers.
+drop policy if exists "admin can read waivers" on waivers;
+create policy "admin can read waivers"
+  on waivers for select
+  to authenticated
+  using (true);
+
 -- After running this file:
 -- 1. Go to Authentication -> Users in the Supabase dashboard and add one
 --    user (your admin email + a password) to log into admin.html.
