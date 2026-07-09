@@ -69,6 +69,13 @@ create policy "admin can update bookings"
   using (true)
   with check (true);
 
+-- Lets the admin manually add a booking (phone/walk-in requests) from admin.html.
+drop policy if exists "admin can insert bookings" on bookings;
+create policy "admin can insert bookings"
+  on bookings for insert
+  to authenticated
+  with check (true);
+
 -- Public availability check, exposed without leaking guest names/emails/phone numbers.
 -- Dropped first because changing the OUT columns (adding sport_type) isn't
 -- allowed via CREATE OR REPLACE — Postgres requires a fresh DROP.

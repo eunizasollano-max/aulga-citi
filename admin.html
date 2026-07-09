@@ -60,13 +60,14 @@
 
     <!-- Dashboard -->
     <div id="dashboardView" class="hidden">
-      <div class="flex items-center justify-between mb-8">
+      <div class="flex flex-wrap items-center justify-between gap-4 mb-8">
         <h1 class="font-display font-bold text-2xl text-white">Booking Requests</h1>
-        <div class="flex gap-2">
+        <div class="flex flex-wrap items-center gap-2">
           <button data-filter="pending" class="filter-btn px-4 py-2 rounded-full text-xs font-semibold border transition">Pending</button>
           <button data-filter="confirmed" class="filter-btn px-4 py-2 rounded-full text-xs font-semibold border transition">Confirmed</button>
           <button data-filter="rejected" class="filter-btn px-4 py-2 rounded-full text-xs font-semibold border transition">Rejected</button>
           <button data-filter="all" class="filter-btn px-4 py-2 rounded-full text-xs font-semibold border transition">All</button>
+          <button id="openAddBooking" class="bg-amber-600 hover:bg-amber-500 text-white text-xs font-semibold px-4 py-2 rounded-full transition ml-2">+ Add Booking</button>
         </div>
       </div>
 
@@ -75,6 +76,105 @@
       <div id="bookingList" class="space-y-4"></div>
     </div>
   </main>
+
+  <!-- Add Booking modal -->
+  <div id="addBookingModal" class="hidden fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4 overflow-y-auto">
+    <div class="bg-slate-900 rounded-2xl border border-slate-800 p-7 w-full max-w-md my-8">
+      <div class="flex items-center justify-between mb-5">
+        <h2 class="font-display font-semibold text-lg text-white">Add a manual booking</h2>
+        <button id="closeAddBooking" aria-label="Close" class="text-slate-400 hover:text-white transition">
+          <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <p class="text-xs text-slate-500 mb-5">For phone calls, walk-ins, or anyone who booked outside the website.</p>
+
+      <form id="addBookingForm" class="space-y-4">
+        <div>
+          <label class="block text-sm font-semibold text-slate-300 mb-1.5">Venue</label>
+          <select id="mVenue" style="color-scheme: dark;" class="w-full rounded-lg bg-slate-800 border border-slate-700 text-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500">
+            <option value="event_center">Aulga Citi Event Center</option>
+            <option value="sports">Aulga Citi Sports</option>
+          </select>
+        </div>
+
+        <div id="mSportsFields" class="hidden space-y-4">
+          <div>
+            <label class="block text-sm font-semibold text-slate-300 mb-1.5">Court</label>
+            <select id="mCourtType" style="color-scheme: dark;" class="w-full rounded-lg bg-slate-800 border border-slate-700 text-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500">
+              <option value="full">Full Court</option>
+              <option value="half">Half Court</option>
+              <option value="event">Event</option>
+            </select>
+          </div>
+          <div id="mSportTypeField" class="hidden">
+            <label class="block text-sm font-semibold text-slate-300 mb-1.5">Sport</label>
+            <select id="mSportType" style="color-scheme: dark;" class="w-full rounded-lg bg-slate-800 border border-slate-700 text-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500">
+              <option value="pickleball">Pickleball</option>
+              <option value="badminton">Badminton</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label for="mDate" class="block text-sm font-semibold text-slate-300 mb-1.5">Date</label>
+            <input id="mDate" type="date" required style="color-scheme: dark;" class="w-full rounded-lg bg-slate-800 border border-slate-700 text-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500">
+          </div>
+          <div>
+            <label for="mStartTime" class="block text-sm font-semibold text-slate-300 mb-1.5">Start time</label>
+            <input id="mStartTime" type="time" required style="color-scheme: dark;" class="w-full rounded-lg bg-slate-800 border border-slate-700 text-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label for="mDuration" class="block text-sm font-semibold text-slate-300 mb-1.5">Duration (hrs)</label>
+            <input id="mDuration" type="number" min="1" max="12" step="1" value="4" required class="w-full rounded-lg bg-slate-800 border border-slate-700 text-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500">
+          </div>
+          <div id="mGuestField">
+            <label for="mGuestCount" class="block text-sm font-semibold text-slate-300 mb-1.5">Guests</label>
+            <input id="mGuestCount" type="number" min="1" class="w-full rounded-lg bg-slate-800 border border-slate-700 text-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500">
+          </div>
+        </div>
+
+        <div>
+          <label for="mName" class="block text-sm font-semibold text-slate-300 mb-1.5">Name</label>
+          <input id="mName" type="text" required placeholder="Guest's full name" class="w-full rounded-lg bg-slate-800 border border-slate-700 text-white placeholder-slate-500 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500">
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label for="mEmail" class="block text-sm font-semibold text-slate-300 mb-1.5">Email</label>
+            <input id="mEmail" type="text" required placeholder="or type 'walk-in'" class="w-full rounded-lg bg-slate-800 border border-slate-700 text-white placeholder-slate-500 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500">
+          </div>
+          <div>
+            <label for="mPhone" class="block text-sm font-semibold text-slate-300 mb-1.5">Phone</label>
+            <input id="mPhone" type="tel" placeholder="09XX XXX XXXX" class="w-full rounded-lg bg-slate-800 border border-slate-700 text-white placeholder-slate-500 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500">
+          </div>
+        </div>
+
+        <div>
+          <label for="mMessage" class="block text-sm font-semibold text-slate-300 mb-1.5">Notes</label>
+          <textarea id="mMessage" rows="2" placeholder="Optional" class="w-full rounded-lg bg-slate-800 border border-slate-700 text-white placeholder-slate-500 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"></textarea>
+        </div>
+
+        <div>
+          <label for="mStatus" class="block text-sm font-semibold text-slate-300 mb-1.5">Status</label>
+          <select id="mStatus" style="color-scheme: dark;" class="w-full rounded-lg bg-slate-800 border border-slate-700 text-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500">
+            <option value="confirmed">Confirmed — blocks this date/time now</option>
+            <option value="pending">Pending — needs review first</option>
+          </select>
+        </div>
+
+        <p id="addBookingError" class="hidden text-sm text-red-400"></p>
+
+        <button type="submit" id="addBookingSubmit" class="w-full bg-amber-600 hover:bg-amber-500 text-white font-semibold py-2.5 rounded-full transition">
+          Add Booking
+        </button>
+      </form>
+    </div>
+  </div>
 
   <script src="js/supabase-client.js"></script>
   <script>
@@ -154,10 +254,25 @@
       }
     }
 
+    function notifyCustomer(booking, status) {
+      if (!BOOKING_NOTIFY_URL || BOOKING_NOTIFY_URL.startsWith('YOUR_')) return;
+      const payload = { ...booking, status, type: 'status_update' };
+      // text/plain avoids a CORS preflight the Apps Script web app doesn't handle.
+      fetch(BOOKING_NOTIFY_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(payload),
+      }).catch(err => console.error('Customer notification failed:', err));
+    }
+
     async function updateStatus(id, status) {
+      const booking = allBookings.find(b => b.id === id);
       try {
         const { error } = await supabaseClient.from('bookings').update({ status }).eq('id', id);
         if (error) throw error;
+        if (booking && (status === 'confirmed' || status === 'rejected')) {
+          notifyCustomer(booking, status);
+        }
         await loadBookings();
       } catch (err) {
         console.error(err);
@@ -188,6 +303,85 @@
 
     document.querySelectorAll('.filter-btn').forEach(btn => {
       btn.addEventListener('click', () => { currentFilter = btn.dataset.filter; renderList(); });
+    });
+
+    const addBookingModal = document.getElementById('addBookingModal');
+    const addBookingForm = document.getElementById('addBookingForm');
+    const addBookingError = document.getElementById('addBookingError');
+
+    function updateManualSubfields() {
+      const isSports = document.getElementById('mVenue').value === 'sports';
+      const courtType = document.getElementById('mCourtType').value;
+      document.getElementById('mSportsFields').classList.toggle('hidden', !isSports);
+      document.getElementById('mSportTypeField').classList.toggle('hidden', !(isSports && courtType === 'half'));
+      document.getElementById('mGuestField').classList.toggle('hidden', isSports && courtType !== 'event');
+      document.getElementById('mDuration').value = isSports ? 1 : 4;
+    }
+
+    document.getElementById('mVenue').addEventListener('change', updateManualSubfields);
+    document.getElementById('mCourtType').addEventListener('change', updateManualSubfields);
+
+    function openAddBookingModal() {
+      addBookingForm.reset();
+      document.getElementById('mVenue').value = 'event_center';
+      updateManualSubfields();
+      addBookingError.classList.add('hidden');
+      addBookingModal.classList.remove('hidden');
+    }
+    function closeAddBookingModal() {
+      addBookingModal.classList.add('hidden');
+    }
+
+    document.getElementById('openAddBooking').addEventListener('click', openAddBookingModal);
+    document.getElementById('closeAddBooking').addEventListener('click', closeAddBookingModal);
+    addBookingModal.addEventListener('click', (e) => {
+      if (e.target === addBookingModal) closeAddBookingModal();
+    });
+
+    addBookingForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      addBookingError.classList.add('hidden');
+
+      const submitBtn = document.getElementById('addBookingSubmit');
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Adding…';
+
+      const isSports = document.getElementById('mVenue').value === 'sports';
+      const courtType = isSports ? document.getElementById('mCourtType').value : null;
+      const showsGuestCount = !isSports || courtType === 'event';
+
+      const payload = {
+        venue: document.getElementById('mVenue').value,
+        court_type: courtType,
+        sport_type: courtType === 'half' ? document.getElementById('mSportType').value : null,
+        booking_date: document.getElementById('mDate').value,
+        start_time: document.getElementById('mStartTime').value,
+        duration_hours: Number(document.getElementById('mDuration').value),
+        name: document.getElementById('mName').value.trim(),
+        email: document.getElementById('mEmail').value.trim(),
+        phone: document.getElementById('mPhone').value.trim() || null,
+        guest_count: showsGuestCount && document.getElementById('mGuestCount').value
+          ? Number(document.getElementById('mGuestCount').value) : null,
+        message: document.getElementById('mMessage').value.trim() || null,
+        status: document.getElementById('mStatus').value,
+      };
+
+      try {
+        const { error } = await supabaseClient.from('bookings').insert(payload);
+        if (error) throw error;
+        closeAddBookingModal();
+        currentFilter = payload.status;
+        await loadBookings();
+      } catch (err) {
+        console.error(err);
+        addBookingError.textContent = payload.status === 'confirmed'
+          ? 'Could not add — this overlaps a booking that\'s already confirmed for this venue.'
+          : 'Something went wrong adding this booking.';
+        addBookingError.classList.remove('hidden');
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Add Booking';
+      }
     });
 
     document.getElementById('loginForm').addEventListener('submit', async (e) => {
