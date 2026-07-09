@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Check Availability & Book | Aulga Citi</title>
+<meta name="description" content="Check real-time availability and request a booking date and time for Aulga Citi Event Center or Aulga Citi Sports.">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect x='4' y='4' width='92' height='92' rx='16' fill='%23ffffff' stroke='%23111827' stroke-width='8'/%3E%3Cpolygon points='16,84 30,52 44,84' fill='%235aa9d8'/%3E%3Cpolygon points='38,84 48,30 58,84' fill='%23f2ce4e'/%3E%3Crect x='41' y='55' width='10' height='29' fill='%23b8403f'/%3E%3Cpolygon points='41,55 46,44 51,55' fill='%23b8403f'/%3E%3Cpolygon points='55,86 62,54 69,66 76,54 83,86' fill='%235aa9d8'/%3E%3Crect x='71' y='58' width='16' height='30' fill='%234f9d95'/%3E%3Crect x='75' y='65' width='4' height='4' fill='%23ffffff'/%3E%3Crect x='75' y='73' width='4' height='4' fill='%23ffffff'/%3E%3Crect x='75' y='81' width='4' height='4' fill='%23ffffff'/%3E%3Crect x='82' y='65' width='3' height='3' fill='%238c2f36'/%3E%3Crect x='82' y='72' width='3' height='3' fill='%238c2f36'/%3E%3C/svg%3E">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        fontFamily: {
+          display: ['Poppins', 'sans-serif'],
+          body: ['Inter', 'sans-serif'],
+        },
+        colors: {
+          amber: { 600: '#d97706' }
+        }
+      }
+    }
+  }
+</script>
+<style>
+  html { scroll-behavior: smooth; }
+  body { font-family: 'Inter', sans-serif; }
+  h1, h2, h3, .font-display { font-family: 'Poppins', sans-serif; }
+</style>
+</head>
+<body class="bg-slate-950 text-slate-300 antialiased">
+
+  <!-- Header -->
+  <header class="sticky top-0 z-50 bg-slate-950/90 backdrop-blur border-b border-slate-800">
+    <div class="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
+      <a href="index.html" class="flex items-center gap-2.5">
+        <svg viewBox="0 0 100 100" class="h-9 w-9 shrink-0" aria-hidden="true">
+          <rect x="4" y="4" width="92" height="92" rx="6" fill="#ffffff" stroke="#111827" stroke-width="6"/>
+          <clipPath id="logoClip"><rect x="8" y="8" width="84" height="84" rx="3"/></clipPath>
+          <g clip-path="url(#logoClip)">
+            <polygon points="16,84 30,52 44,84" fill="#5aa9d8"/>
+            <polygon points="38,84 48,30 58,84" fill="#f2ce4e"/>
+            <rect x="41" y="55" width="10" height="29" fill="#b8403f"/>
+            <polygon points="41,55 46,44 51,55" fill="#b8403f"/>
+            <polygon points="55,86 62,54 69,66 76,54 83,86" fill="#5aa9d8"/>
+            <rect x="71" y="58" width="16" height="30" fill="#4f9d95"/>
+            <rect x="75" y="65" width="4" height="4" fill="#ffffff"/>
+            <rect x="75" y="73" width="4" height="4" fill="#ffffff"/>
+            <rect x="75" y="81" width="4" height="4" fill="#ffffff"/>
+            <rect x="82" y="65" width="3" height="3" fill="#8c2f36"/>
+            <rect x="82" y="72" width="3" height="3" fill="#8c2f36"/>
+          </g>
+        </svg>
+        <span class="font-display font-extrabold text-xl tracking-tight text-white">
+          AULGA <span class="text-amber-500">CITI</span>
+        </span>
+      </a>
+      <a href="index.html" class="text-sm font-medium text-slate-400 hover:text-amber-500 transition">&larr; Back to site</a>
+    </div>
+  </header>
+
+  <main class="max-w-4xl mx-auto px-6 py-14 md:py-20">
+    <div class="text-center max-w-2xl mx-auto mb-12">
+      <p class="uppercase tracking-[0.2em] text-amber-500 text-xs font-semibold mb-3">Availability</p>
+      <h1 class="font-display font-bold text-3xl md:text-4xl text-white mb-4">Check availability &amp; request a date</h1>
+      <p class="text-slate-400 text-sm">Pick a venue and a date. Open dates can be requested right away — your request is marked <strong class="text-amber-400 font-semibold">Pending Confirmation</strong> until we lock it in.</p>
+    </div>
+
+    <!-- Venue Tabs -->
+    <div class="flex items-center justify-center gap-2 mb-10">
+      <button id="tab-event_center" data-venue="event_center" class="venue-tab px-5 py-2.5 rounded-full text-sm font-semibold border transition">Event Center</button>
+      <button id="tab-sports" data-venue="sports" class="venue-tab px-5 py-2.5 rounded-full text-sm font-semibold border transition">Sports</button>
+    </div>
+
+    <div class="grid lg:grid-cols-2 gap-8 items-start">
+      <!-- Calendar -->
+      <div class="bg-slate-900 rounded-2xl border border-slate-800 p-6 md:p-7">
+        <div class="flex items-center justify-between mb-5">
+          <button id="prevMonth" aria-label="Previous month" class="h-9 w-9 flex items-center justify-center rounded-full bg-slate-800 hover:bg-slate-700 text-white transition">
+            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 19l-7-7 7-7"/></svg>
+          </button>
+          <h2 id="monthLabel" class="font-display font-semibold text-lg text-white"></h2>
+          <button id="nextMonth" aria-label="Next month" class="h-9 w-9 flex items-center justify-center rounded-full bg-slate-800 hover:bg-slate-700 text-white transition">
+            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg>
+          </button>
+        </div>
+        <div class="grid grid-cols-7 gap-1.5 text-center text-xs font-semibold text-slate-500 mb-2">
+          <span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span>
+        </div>
+        <div id="calendarGrid" class="grid grid-cols-7 gap-1.5"></div>
+        <div class="flex flex-wrap gap-x-5 gap-y-2 mt-6 text-xs text-slate-400">
+          <span class="flex items-center gap-1.5"><span class="h-2.5 w-2.5 rounded-full bg-emerald-500"></span> Open</span>
+          <span class="flex items-center gap-1.5"><span class="h-2.5 w-2.5 rounded-full bg-amber-500"></span> Partially booked</span>
+          <span class="flex items-center gap-1.5"><span class="h-2.5 w-2.5 rounded-full bg-red-500"></span> Fully booked</span>
+        </div>
+        <p id="calendarLoading" class="text-xs text-slate-500 mt-4">Loading availability&hellip;</p>
+      </div>
+
+      <!-- Request panel -->
+      <div id="requestPanel" class="bg-slate-900 rounded-2xl border border-slate-800 p-6 md:p-7">
+        <div id="noDateSelected" class="text-sm text-slate-400 py-10 text-center">
+          Select an open date on the calendar to request a booking.
+        </div>
+
+        <form id="bookingForm" class="hidden space-y-5">
+          <div>
+            <p class="text-xs uppercase tracking-wide text-amber-500 font-semibold mb-1">Selected date</p>
+            <p id="selectedDateLabel" class="font-display font-semibold text-white text-lg"></p>
+            <div id="existingSlots" class="mt-2 space-y-1"></div>
+          </div>
+
+          <div id="sportsFields" class="hidden space-y-4">
+            <div>
+              <label class="block text-sm font-semibold text-slate-300 mb-1.5">Court</label>
+              <select id="courtType" style="color-scheme: dark;" class="w-full rounded-lg bg-slate-800 border border-slate-700 text-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500">
+                <option value="full">Full Court (₱800/hr)</option>
+                <option value="half">Half Court (₱400/hr)</option>
+                <option value="event">Event (pricing TBD)</option>
+              </select>
+            </div>
+
+            <div id="sportTypeField" class="hidden">
+              <label class="block text-sm font-semibold text-slate-300 mb-1.5">Sport</label>
+              <select id="sportType" style="color-scheme: dark;" class="w-full rounded-lg bg-slate-800 border border-slate-700 text-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500">
+                <option value="pickleball">Pickleball</option>
+                <option value="badminton">Badminton</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+
+            <div id="eventNote" class="hidden flex items-start gap-3 bg-amber-500/10 border border-amber-500/30 rounded-lg p-3.5">
+              <svg class="h-4 w-4 text-amber-400 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>
+              <p class="text-xs text-amber-200/90">Event pricing isn't fixed — submit your request and we'll follow up to work out the details and cost.</p>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label for="startTime" class="block text-sm font-semibold text-slate-300 mb-1.5">Start time</label>
+              <input id="startTime" type="time" required style="color-scheme: dark;" class="w-full rounded-lg bg-slate-800 border border-slate-700 text-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500">
+            </div>
+            <div>
+              <label for="durationHours" class="block text-sm font-semibold text-slate-300 mb-1.5">Duration (hrs)</label>
+              <input id="durationHours" type="number" min="1" max="12" step="1" required class="w-full rounded-lg bg-slate-800 border border-slate-700 text-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500">
+            </div>
+          </div>
+
+          <div id="guestCountField">
+            <label for="guestCount" class="block text-sm font-semibold text-slate-300 mb-1.5">Guest count</label>
+            <input id="guestCount" type="number" min="1" placeholder="Approx. number of guests" class="w-full rounded-lg bg-slate-800 border border-slate-700 text-white placeholder-slate-500 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500">
+          </div>
+
+          <div>
+            <label for="reqName" class="block text-sm font-semibold text-slate-300 mb-1.5">Name</label>
+            <input id="reqName" type="text" required placeholder="Your full name" class="w-full rounded-lg bg-slate-800 border border-slate-700 text-white placeholder-slate-500 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500">
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label for="reqEmail" class="block text-sm font-semibold text-slate-300 mb-1.5">Email</label>
+              <input id="reqEmail" type="email" required placeholder="you@email.com" class="w-full rounded-lg bg-slate-800 border border-slate-700 text-white placeholder-slate-500 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500">
+            </div>
+            <div>
+              <label for="reqPhone" class="block text-sm font-semibold text-slate-300 mb-1.5">Phone</label>
+              <input id="reqPhone" type="tel" placeholder="09XX XXX XXXX" class="w-full rounded-lg bg-slate-800 border border-slate-700 text-white placeholder-slate-500 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500">
+            </div>
+          </div>
+          <div>
+            <label for="reqMessage" class="block text-sm font-semibold text-slate-300 mb-1.5">Message</label>
+            <textarea id="reqMessage" rows="3" placeholder="Anything else we should know" class="w-full rounded-lg bg-slate-800 border border-slate-700 text-white placeholder-slate-500 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"></textarea>
+          </div>
+
+          <div class="flex items-start gap-3 bg-amber-500/10 border border-amber-500/30 rounded-lg p-3.5">
+            <svg class="h-4 w-4 text-amber-400 shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>
+            <p class="text-xs text-amber-200/90">This isn't confirmed yet. Submitting marks it <strong>Pending Confirmation</strong> — we'll check it against our calendar and get back to you before it's locked in.</p>
+          </div>
+
+          <p id="formError" class="hidden text-sm text-red-400"></p>
+
+          <button type="submit" id="submitBtn" class="w-full bg-amber-600 hover:bg-amber-500 text-white font-semibold py-3 rounded-full transition">
+            Request to Book
+          </button>
+        </form>
+
+        <div id="successMessage" class="hidden text-center py-10">
+          <div class="mx-auto mb-4 h-14 w-14 rounded-full bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
+            <svg class="h-7 w-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+          </div>
+          <h3 class="font-display font-semibold text-white text-lg mb-2">Request submitted</h3>
+          <p class="text-sm text-slate-400 mb-6">Your date is marked <strong class="text-amber-400">Pending Confirmation</strong>. We'll reach out by email or phone to confirm.</p>
+          <button id="requestAnother" class="text-amber-500 font-semibold text-sm hover:underline">Request another date</button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="border-t border-slate-800 text-slate-500 text-xs py-8 px-6 text-center">
+    &copy; 2026 Aulga Citi. All rights reserved.
+  </footer>
+
+  <script src="js/supabase-client.js"></script>
+  <script>
+    const VENUE_LABELS = { event_center: 'Aulga Citi Event Center', sports: 'Aulga Citi Sports' };
+    const state = {
+      venue: 'event_center',
+      viewYear: new Date().getFullYear(),
+      viewMonth: new Date().getMonth(),
+      availability: [], // rows from get_availability
+      selectedDate: null, // 'YYYY-MM-DD'
+    };
+
+    const todayStr = () => new Date().toISOString().split('T')[0];
+
+    function toDateStr(y, m, d) {
+      return `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+    }
+
+    function setVenue(venue) {
+      state.venue = venue;
+      state.selectedDate = null;
+      document.querySelectorAll('.venue-tab').forEach(btn => {
+        const active = btn.dataset.venue === venue;
+        btn.className = 'venue-tab px-5 py-2.5 rounded-full text-sm font-semibold border transition ' +
+          (active ? 'bg-amber-600 border-amber-600 text-white' : 'bg-slate-900 border-slate-700 text-slate-300 hover:border-amber-500/40');
+      });
+      document.getElementById('sportsFields').classList.toggle('hidden', venue !== 'sports');
+      document.getElementById('durationHours').value = venue === 'sports' ? 1 : 4;
+      if (venue === 'sports') document.getElementById('courtType').value = 'full';
+      updateCourtSubfields();
+      resetPanel();
+      loadAvailability();
+    }
+
+    function updateCourtSubfields() {
+      const isSports = state.venue === 'sports';
+      const courtType = document.getElementById('courtType').value;
+      document.getElementById('sportTypeField').classList.toggle('hidden', !(isSports && courtType === 'half'));
+      document.getElementById('eventNote').classList.toggle('hidden', !(isSports && courtType === 'event'));
+      document.getElementById('guestCountField').classList.toggle('hidden', isSports && courtType !== 'event');
+    }
+
+    function resetPanel() {
+      document.getElementById('noDateSelected').classList.remove('hidden');
+      document.getElementById('bookingForm').classList.add('hidden');
+      document.getElementById('successMessage').classList.add('hidden');
+    }
+
+    async function loadAvailability() {
+      const loadingEl = document.getElementById('calendarLoading');
+      loadingEl.textContent = 'Loading availability…';
+      loadingEl.classList.remove('hidden');
+      try {
+        const { data, error } = await supabaseClient.rpc('get_availability', { p_venue: state.venue });
+        if (error) throw error;
+        state.availability = data || [];
+        loadingEl.classList.add('hidden');
+      } catch (err) {
+        console.error(err);
+        loadingEl.textContent = 'Could not load availability. Please refresh.';
+        loadingEl.classList.remove('hidden');
+        state.availability = [];
+      }
+      renderCalendar();
+    }
+
+    function dayStatus(dateStr) {
+      const rows = state.availability.filter(r => r.booking_date === dateStr);
+      if (rows.length === 0) return 'open';
+      if (state.venue === 'event_center') {
+        return rows.some(r => r.status === 'confirmed') ? 'full' : 'partial';
+      }
+      // sports: sum booked hours, court open roughly 8am-10pm (14 hrs)
+      const bookedHours = rows.reduce((sum, r) => sum + Number(r.duration_hours), 0);
+      if (bookedHours >= 14) return 'full';
+      return 'partial';
+    }
+
+    function renderCalendar() {
+      const grid = document.getElementById('calendarGrid');
+      grid.innerHTML = '';
+      const { viewYear, viewMonth } = state;
+      document.getElementById('monthLabel').textContent =
+        new Date(viewYear, viewMonth, 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+
+      const firstDay = new Date(viewYear, viewMonth, 1).getDay();
+      const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+
+      for (let i = 0; i < firstDay; i++) {
+        grid.insertAdjacentHTML('beforeend', '<div></div>');
+      }
+
+      for (let d = 1; d <= daysInMonth; d++) {
+        const dateStr = toDateStr(viewYear, viewMonth, d);
+        const isPast = dateStr < todayStr();
+        const status = isPast ? 'past' : dayStatus(dateStr);
+        const isSelected = dateStr === state.selectedDate;
+
+        let classes = 'h-10 rounded-lg text-sm font-medium flex items-center justify-center transition ';
+        let disabled = false;
+        if (status === 'past') {
+          classes += 'text-slate-700 cursor-not-allowed';
+          disabled = true;
+        } else if (status === 'full') {
+          classes += 'bg-red-500/10 text-red-400 cursor-not-allowed';
+          disabled = true;
+        } else if (status === 'partial') {
+          classes += 'bg-amber-500/10 text-amber-400 hover:bg-amber-500/20 cursor-pointer';
+        } else {
+          classes += 'bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 cursor-pointer';
+        }
+        if (isSelected) {
+          classes += ' ring-2 ring-amber-500';
+        }
+
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.textContent = d;
+        btn.className = classes;
+        btn.disabled = disabled;
+        if (!disabled) {
+          btn.addEventListener('click', () => selectDate(dateStr));
+        }
+        grid.appendChild(btn);
+      }
+    }
+
+    function selectDate(dateStr) {
+      state.selectedDate = dateStr;
+      renderCalendar();
+
+      document.getElementById('noDateSelected').classList.add('hidden');
+      document.getElementById('successMessage').classList.add('hidden');
+      document.getElementById('bookingForm').classList.remove('hidden');
+
+      const label = new Date(dateStr + 'T00:00:00').toLocaleDateString('en-US', {
+        weekday: 'long', month: 'long', day: 'numeric', year: 'numeric'
+      });
+      document.getElementById('selectedDateLabel').textContent = `${VENUE_LABELS[state.venue]} — ${label}`;
+
+      const slotsEl = document.getElementById('existingSlots');
+      const rows = state.availability.filter(r => r.booking_date === dateStr);
+      if (rows.length === 0) {
+        slotsEl.innerHTML = '<p class="text-xs text-slate-500">No existing requests on this date yet.</p>';
+      } else {
+        slotsEl.innerHTML = rows.map(r => {
+          const badge = r.status === 'confirmed'
+            ? '<span class="text-red-400">Booked</span>'
+            : '<span class="text-amber-400">Pending</span>';
+          let court = '';
+          if (r.court_type === 'event') court = ' &middot; Event';
+          else if (r.court_type) court = ` &middot; ${r.court_type} court${r.sport_type ? ` (${r.sport_type})` : ''}`;
+          return `<p class="text-xs text-slate-400">${r.start_time.slice(0,5)} &middot; ${r.duration_hours}hr${court} &mdash; ${badge}</p>`;
+        }).join('');
+      }
+    }
+
+    document.querySelectorAll('.venue-tab').forEach(btn => {
+      btn.addEventListener('click', () => setVenue(btn.dataset.venue));
+    });
+    document.getElementById('courtType').addEventListener('change', updateCourtSubfields);
+
+    document.getElementById('prevMonth').addEventListener('click', () => {
+      state.viewMonth -= 1;
+      if (state.viewMonth < 0) { state.viewMonth = 11; state.viewYear -= 1; }
+      renderCalendar();
+    });
+    document.getElementById('nextMonth').addEventListener('click', () => {
+      state.viewMonth += 1;
+      if (state.viewMonth > 11) { state.viewMonth = 0; state.viewYear += 1; }
+      renderCalendar();
+    });
+
+    document.getElementById('requestAnother').addEventListener('click', () => {
+      document.getElementById('bookingForm').reset();
+      resetPanel();
+      loadAvailability();
+    });
+
+    function notifyOwner(payload) {
+      if (!BOOKING_NOTIFY_URL || BOOKING_NOTIFY_URL.startsWith('YOUR_')) return;
+      // text/plain avoids a CORS preflight that the Apps Script web app doesn't handle.
+      fetch(BOOKING_NOTIFY_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(payload),
+      }).catch(err => console.error('Booking notification failed:', err));
+    }
+
+    document.getElementById('bookingForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const errorEl = document.getElementById('formError');
+      errorEl.classList.add('hidden');
+
+      const submitBtn = document.getElementById('submitBtn');
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Submitting…';
+
+      const isSports = state.venue === 'sports';
+      const courtType = isSports ? document.getElementById('courtType').value : null;
+      const showsGuestCount = !isSports || courtType === 'event';
+
+      const payload = {
+        id: crypto.randomUUID(),
+        venue: state.venue,
+        court_type: courtType,
+        sport_type: courtType === 'half' ? document.getElementById('sportType').value : null,
+        booking_date: state.selectedDate,
+        start_time: document.getElementById('startTime').value,
+        duration_hours: Number(document.getElementById('durationHours').value),
+        name: document.getElementById('reqName').value.trim(),
+        email: document.getElementById('reqEmail').value.trim(),
+        phone: document.getElementById('reqPhone').value.trim() || null,
+        guest_count: showsGuestCount && document.getElementById('guestCount').value
+          ? Number(document.getElementById('guestCount').value) : null,
+        message: document.getElementById('reqMessage').value.trim() || null,
+        status: 'pending',
+      };
+
+      try {
+        const { error } = await supabaseClient.from('bookings').insert(payload);
+        if (error) throw error;
+        document.getElementById('bookingForm').classList.add('hidden');
+        document.getElementById('successMessage').classList.remove('hidden');
+        loadAvailability();
+        notifyOwner(payload);
+      } catch (err) {
+        console.error(err);
+        errorEl.textContent = 'Something went wrong submitting your request. Please try again or message us on Facebook.';
+        errorEl.classList.remove('hidden');
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Request to Book';
+      }
+    });
+
+    // Init: read ?venue= query param
+    const params = new URLSearchParams(window.location.search);
+    const initialVenue = params.get('venue') === 'sports' ? 'sports' : 'event_center';
+    setVenue(initialVenue);
+  </script>
+</body>
+</html>

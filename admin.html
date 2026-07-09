@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Booking Admin | Aulga Citi</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect x='4' y='4' width='92' height='92' rx='16' fill='%23ffffff' stroke='%23111827' stroke-width='8'/%3E%3Cpolygon points='16,84 30,52 44,84' fill='%235aa9d8'/%3E%3Cpolygon points='38,84 48,30 58,84' fill='%23f2ce4e'/%3E%3Crect x='41' y='55' width='10' height='29' fill='%23b8403f'/%3E%3Cpolygon points='41,55 46,44 51,55' fill='%23b8403f'/%3E%3Cpolygon points='55,86 62,54 69,66 76,54 83,86' fill='%235aa9d8'/%3E%3Crect x='71' y='58' width='16' height='30' fill='%234f9d95'/%3E%3Crect x='75' y='65' width='4' height='4' fill='%23ffffff'/%3E%3Crect x='75' y='73' width='4' height='4' fill='%23ffffff'/%3E%3Crect x='75' y='81' width='4' height='4' fill='%23ffffff'/%3E%3Crect x='82' y='65' width='3' height='3' fill='%238c2f36'/%3E%3Crect x='82' y='72' width='3' height='3' fill='%238c2f36'/%3E%3C/svg%3E">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        fontFamily: {
+          display: ['Poppins', 'sans-serif'],
+          body: ['Inter', 'sans-serif'],
+        },
+        colors: { amber: { 600: '#d97706' } }
+      }
+    }
+  }
+</script>
+<style>
+  body { font-family: 'Inter', sans-serif; }
+  h1, h2, h3, .font-display { font-family: 'Poppins', sans-serif; }
+</style>
+</head>
+<body class="bg-slate-950 text-slate-300 antialiased min-h-screen">
+
+  <header class="border-b border-slate-800">
+    <div class="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
+      <a href="index.html" class="font-display font-extrabold text-lg tracking-tight text-white">
+        AULGA <span class="text-amber-500">CITI</span> <span class="text-slate-500 font-medium text-sm">/ Admin</span>
+      </a>
+      <button id="logoutBtn" class="hidden text-sm font-medium text-slate-400 hover:text-amber-500 transition">Log out</button>
+    </div>
+  </header>
+
+  <main class="max-w-5xl mx-auto px-6 py-14">
+
+    <!-- Login -->
+    <div id="loginView" class="max-w-sm mx-auto bg-slate-900 rounded-2xl border border-slate-800 p-8">
+      <h1 class="font-display font-bold text-xl text-white mb-6 text-center">Admin Log In</h1>
+      <form id="loginForm" class="space-y-4">
+        <div>
+          <label for="loginEmail" class="block text-sm font-semibold text-slate-300 mb-1.5">Email</label>
+          <input id="loginEmail" type="email" required class="w-full rounded-lg bg-slate-800 border border-slate-700 text-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500">
+        </div>
+        <div>
+          <label for="loginPassword" class="block text-sm font-semibold text-slate-300 mb-1.5">Password</label>
+          <input id="loginPassword" type="password" required class="w-full rounded-lg bg-slate-800 border border-slate-700 text-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500">
+        </div>
+        <p id="loginError" class="hidden text-sm text-red-400"></p>
+        <button type="submit" class="w-full bg-amber-600 hover:bg-amber-500 text-white font-semibold py-2.5 rounded-full transition">Log In</button>
+      </form>
+    </div>
+
+    <!-- Dashboard -->
+    <div id="dashboardView" class="hidden">
+      <div class="flex items-center justify-between mb-8">
+        <h1 class="font-display font-bold text-2xl text-white">Booking Requests</h1>
+        <div class="flex gap-2">
+          <button data-filter="pending" class="filter-btn px-4 py-2 rounded-full text-xs font-semibold border transition">Pending</button>
+          <button data-filter="confirmed" class="filter-btn px-4 py-2 rounded-full text-xs font-semibold border transition">Confirmed</button>
+          <button data-filter="rejected" class="filter-btn px-4 py-2 rounded-full text-xs font-semibold border transition">Rejected</button>
+          <button data-filter="all" class="filter-btn px-4 py-2 rounded-full text-xs font-semibold border transition">All</button>
+        </div>
+      </div>
+
+      <p id="listError" class="hidden text-sm text-red-400 mb-4"></p>
+      <p id="listEmpty" class="hidden text-sm text-slate-500">No bookings in this view.</p>
+      <div id="bookingList" class="space-y-4"></div>
+    </div>
+  </main>
+
+  <script src="js/supabase-client.js"></script>
+  <script>
+    const highlightId = new URLSearchParams(window.location.search).get('id');
+    let currentFilter = highlightId ? 'all' : 'pending';
+    let allBookings = [];
+
+    const loginView = document.getElementById('loginView');
+    const dashboardView = document.getElementById('dashboardView');
+    const logoutBtn = document.getElementById('logoutBtn');
+
+    function statusBadge(status) {
+      const map = {
+        pending: 'bg-amber-500/10 text-amber-400 border-amber-500/30',
+        confirmed: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30',
+        rejected: 'bg-red-500/10 text-red-400 border-red-500/30',
+      };
+      return `<span class="text-xs font-semibold px-2.5 py-1 rounded-full border ${map[status]}">${status}</span>`;
+    }
+
+    function renderList() {
+      const listEl = document.getElementById('bookingList');
+      const emptyEl = document.getElementById('listEmpty');
+      const rows = currentFilter === 'all'
+        ? allBookings
+        : allBookings.filter(b => b.status === currentFilter);
+
+      document.querySelectorAll('.filter-btn').forEach(btn => {
+        const active = btn.dataset.filter === currentFilter;
+        btn.className = 'filter-btn px-4 py-2 rounded-full text-xs font-semibold border transition ' +
+          (active ? 'bg-amber-600 border-amber-600 text-white' : 'bg-slate-900 border-slate-700 text-slate-300 hover:border-amber-500/40');
+      });
+
+      if (rows.length === 0) {
+        listEl.innerHTML = '';
+        emptyEl.classList.remove('hidden');
+        return;
+      }
+      emptyEl.classList.add('hidden');
+
+      listEl.innerHTML = rows.map(b => {
+        const venueLabel = b.venue === 'sports' ? 'Aulga Citi Sports' : 'Aulga Citi Event Center';
+        let court = '';
+        if (b.court_type === 'event') court = ' &middot; Event';
+        else if (b.court_type) court = ` &middot; ${b.court_type} court${b.sport_type ? ` (${b.sport_type})` : ''}`;
+        const dateLabel = new Date(b.booking_date + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+        const actions = b.status === 'pending'
+          ? `<button data-id="${b.id}" data-action="confirmed" class="action-btn bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold px-4 py-2 rounded-full transition">Approve</button>
+             <button data-id="${b.id}" data-action="rejected" class="action-btn bg-slate-800 hover:bg-red-600 text-white text-xs font-semibold px-4 py-2 rounded-full transition">Reject</button>`
+          : `<button data-id="${b.id}" data-action="pending" class="action-btn bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold px-4 py-2 rounded-full transition">Reset to pending</button>`;
+
+        const highlighted = b.id === highlightId;
+
+        return `
+          <div class="bg-slate-900 rounded-2xl border ${highlighted ? 'border-amber-500 ring-2 ring-amber-500/40' : 'border-slate-800'} p-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4" data-row="${b.id}">
+            <div>
+              <div class="flex items-center gap-2 mb-2">
+                <p class="font-display font-semibold text-white">${venueLabel}${court}</p>
+                ${statusBadge(b.status)}
+              </div>
+              <p class="text-sm text-slate-300">${dateLabel} &middot; ${b.start_time.slice(0,5)} &middot; ${b.duration_hours}hr${b.guest_count ? ` &middot; ${b.guest_count} guests` : ''}</p>
+              <p class="text-sm text-slate-400 mt-1">${b.name} &middot; <a href="mailto:${b.email}" class="hover:text-amber-400">${b.email}</a>${b.phone ? ` &middot; ${b.phone}` : ''}</p>
+              ${b.message ? `<p class="text-xs text-slate-500 mt-2">${b.message}</p>` : ''}
+              <p class="text-xs text-slate-600 mt-2">Requested ${new Date(b.created_at).toLocaleString()}</p>
+            </div>
+            <div class="flex gap-2 shrink-0">${actions}</div>
+          </div>`;
+      }).join('');
+
+      document.querySelectorAll('.action-btn').forEach(btn => {
+        btn.addEventListener('click', () => updateStatus(btn.dataset.id, btn.dataset.action));
+      });
+
+      if (highlightId) {
+        const row = listEl.querySelector(`[data-row="${highlightId}"]`);
+        if (row) row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }
+
+    async function updateStatus(id, status) {
+      try {
+        const { error } = await supabaseClient.from('bookings').update({ status }).eq('id', id);
+        if (error) throw error;
+        await loadBookings();
+      } catch (err) {
+        console.error(err);
+        alert(status === 'confirmed'
+          ? 'Could not confirm — this overlaps a booking that\'s already confirmed for this venue.'
+          : 'Something went wrong updating this booking.');
+      }
+    }
+
+    async function loadBookings() {
+      const errorEl = document.getElementById('listError');
+      errorEl.classList.add('hidden');
+      try {
+        const { data, error } = await supabaseClient
+          .from('bookings')
+          .select('*')
+          .order('status', { ascending: true })
+          .order('booking_date', { ascending: true });
+        if (error) throw error;
+        allBookings = data || [];
+        renderList();
+      } catch (err) {
+        console.error(err);
+        errorEl.textContent = 'Could not load bookings.';
+        errorEl.classList.remove('hidden');
+      }
+    }
+
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+      btn.addEventListener('click', () => { currentFilter = btn.dataset.filter; renderList(); });
+    });
+
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const errorEl = document.getElementById('loginError');
+      errorEl.classList.add('hidden');
+      const { error } = await supabaseClient.auth.signInWithPassword({
+        email: document.getElementById('loginEmail').value.trim(),
+        password: document.getElementById('loginPassword').value,
+      });
+      if (error) {
+        errorEl.textContent = 'Invalid email or password.';
+        errorEl.classList.remove('hidden');
+        return;
+      }
+      showDashboard();
+    });
+
+    logoutBtn.addEventListener('click', async () => {
+      await supabaseClient.auth.signOut();
+      showLogin();
+    });
+
+    function showDashboard() {
+      loginView.classList.add('hidden');
+      dashboardView.classList.remove('hidden');
+      logoutBtn.classList.remove('hidden');
+      loadBookings();
+    }
+    function showLogin() {
+      loginView.classList.remove('hidden');
+      dashboardView.classList.add('hidden');
+      logoutBtn.classList.add('hidden');
+    }
+
+    (async () => {
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      if (session) { showDashboard(); } else { showLogin(); }
+    })();
+  </script>
+</body>
+</html>
