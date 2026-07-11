@@ -44,6 +44,12 @@
     <!-- Login -->
     <div id="loginView" class="max-w-sm mx-auto bg-slate-900 rounded-2xl border border-slate-800 p-8">
       <h1 class="font-display font-bold text-xl text-white mb-6 text-center">Admin Log In</h1>
+
+      <div class="flex gap-2 mb-6">
+        <button id="loginTabEmail" type="button" class="login-tab-btn flex-1 px-4 py-2 rounded-full text-xs font-semibold border transition">Email &amp; Password</button>
+        <button id="loginTabCode" type="button" class="login-tab-btn flex-1 px-4 py-2 rounded-full text-xs font-semibold border transition">Quick Code</button>
+      </div>
+
       <form id="loginForm" class="space-y-4">
         <div>
           <label for="loginEmail" class="block text-sm font-semibold text-slate-300 mb-1.5">Email</label>
@@ -56,24 +62,49 @@
         <p id="loginError" class="hidden text-sm text-red-400"></p>
         <button type="submit" class="w-full bg-amber-600 hover:bg-amber-500 text-white font-semibold py-2.5 rounded-full transition">Log In</button>
       </form>
+
+      <form id="codeLoginForm" class="hidden space-y-4">
+        <div>
+          <label for="loginCode" class="block text-sm font-semibold text-slate-300 mb-1.5">Code</label>
+          <input id="loginCode" type="password" inputmode="numeric" pattern="[0-9]*" required placeholder="6-digit code" class="w-full rounded-lg bg-slate-800 border border-slate-700 text-white placeholder-slate-500 px-4 py-2.5 text-sm text-center tracking-[0.3em] focus:outline-none focus:ring-2 focus:ring-amber-500">
+        </div>
+        <p id="codeLoginError" class="hidden text-sm text-red-400"></p>
+        <button type="submit" class="w-full bg-amber-600 hover:bg-amber-500 text-white font-semibold py-2.5 rounded-full transition">Log In</button>
+      </form>
     </div>
 
     <!-- Dashboard -->
     <div id="dashboardView" class="hidden">
-      <div class="flex flex-wrap items-center justify-between gap-4 mb-8">
-        <h1 class="font-display font-bold text-2xl text-white">Booking Requests</h1>
-        <div class="flex flex-wrap items-center gap-2">
-          <button data-filter="pending" class="filter-btn px-4 py-2 rounded-full text-xs font-semibold border transition">Pending</button>
-          <button data-filter="confirmed" class="filter-btn px-4 py-2 rounded-full text-xs font-semibold border transition">Confirmed</button>
-          <button data-filter="rejected" class="filter-btn px-4 py-2 rounded-full text-xs font-semibold border transition">Rejected</button>
-          <button data-filter="all" class="filter-btn px-4 py-2 rounded-full text-xs font-semibold border transition">All</button>
-          <button id="openAddBooking" class="bg-amber-600 hover:bg-amber-500 text-white text-xs font-semibold px-4 py-2 rounded-full transition ml-2">+ Add Booking</button>
-        </div>
+      <div class="flex items-center gap-2 mb-8">
+        <button id="tabBookings" class="main-tab-btn px-5 py-2.5 rounded-full text-sm font-semibold border transition">Bookings</button>
+        <button id="tabWaivers" class="main-tab-btn px-5 py-2.5 rounded-full text-sm font-semibold border transition">Waivers</button>
       </div>
 
-      <p id="listError" class="hidden text-sm text-red-400 mb-4"></p>
-      <p id="listEmpty" class="hidden text-sm text-slate-500">No bookings in this view.</p>
-      <div id="bookingList" class="space-y-4"></div>
+      <!-- Bookings panel -->
+      <div id="bookingsPanel">
+        <div class="flex flex-wrap items-center justify-between gap-4 mb-8">
+          <h1 class="font-display font-bold text-2xl text-white">Booking Requests</h1>
+          <div class="flex flex-wrap items-center gap-2">
+            <button data-filter="pending" class="filter-btn px-4 py-2 rounded-full text-xs font-semibold border transition">Pending</button>
+            <button data-filter="confirmed" class="filter-btn px-4 py-2 rounded-full text-xs font-semibold border transition">Confirmed</button>
+            <button data-filter="rejected" class="filter-btn px-4 py-2 rounded-full text-xs font-semibold border transition">Rejected</button>
+            <button data-filter="all" class="filter-btn px-4 py-2 rounded-full text-xs font-semibold border transition">All</button>
+            <button id="openAddBooking" class="bg-amber-600 hover:bg-amber-500 text-white text-xs font-semibold px-4 py-2 rounded-full transition ml-2">+ Add Booking</button>
+          </div>
+        </div>
+
+        <p id="listError" class="hidden text-sm text-red-400 mb-4"></p>
+        <p id="listEmpty" class="hidden text-sm text-slate-500">No bookings in this view.</p>
+        <div id="bookingList" class="space-y-4"></div>
+      </div>
+
+      <!-- Waivers panel -->
+      <div id="waiversPanel" class="hidden">
+        <h1 class="font-display font-bold text-2xl text-white mb-8">Signed Waivers</h1>
+        <p id="waiversError" class="hidden text-sm text-red-400 mb-4"></p>
+        <p id="waiversEmpty" class="hidden text-sm text-slate-500">No waivers submitted yet.</p>
+        <div id="waiversList" class="space-y-4"></div>
+      </div>
     </div>
   </main>
 
@@ -181,10 +212,26 @@
     const highlightId = new URLSearchParams(window.location.search).get('id');
     let currentFilter = highlightId ? 'all' : 'pending';
     let allBookings = [];
+    let allWaivers = [];
+    let waiversLoaded = false;
 
     const loginView = document.getElementById('loginView');
     const dashboardView = document.getElementById('dashboardView');
     const logoutBtn = document.getElementById('logoutBtn');
+
+    // Escapes free-text fields (name, email, message, etc.) before they're
+    // interpolated into innerHTML — without this, a booking/waiver submitted
+    // with HTML in a text field would execute inside this logged-in admin
+    // session the moment the list renders.
+    function escapeHtml(value) {
+      if (value == null) return '';
+      return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
 
     function statusBadge(status) {
       const map = {
@@ -235,9 +282,9 @@
                 <p class="font-display font-semibold text-white">${venueLabel}${court}</p>
                 ${statusBadge(b.status)}
               </div>
-              <p class="text-sm text-slate-300">${dateLabel} &middot; ${b.start_time.slice(0,5)} &middot; ${b.duration_hours}hr${b.guest_count ? ` &middot; ${b.guest_count} guests` : ''}</p>
-              <p class="text-sm text-slate-400 mt-1">${b.name} &middot; <a href="mailto:${b.email}" class="hover:text-amber-400">${b.email}</a>${b.phone ? ` &middot; ${b.phone}` : ''}</p>
-              ${b.message ? `<p class="text-xs text-slate-500 mt-2">${b.message}</p>` : ''}
+              <p class="text-sm text-slate-300">${dateLabel} &middot; ${b.start_time.slice(0,5)} &middot; ${b.duration_hours}hr${b.guest_count ? ` &middot; ${escapeHtml(b.guest_count)} guests` : ''}</p>
+              <p class="text-sm text-slate-400 mt-1">${escapeHtml(b.name)} &middot; <a href="mailto:${encodeURIComponent(b.email)}" class="hover:text-amber-400">${escapeHtml(b.email)}</a>${b.phone ? ` &middot; ${escapeHtml(b.phone)}` : ''}</p>
+              ${b.message ? `<p class="text-xs text-slate-500 mt-2">${escapeHtml(b.message)}</p>` : ''}
               <p class="text-xs text-slate-600 mt-2">Requested ${new Date(b.created_at).toLocaleString()}</p>
             </div>
             <div class="flex gap-2 shrink-0">${actions}</div>
@@ -304,6 +351,76 @@
     document.querySelectorAll('.filter-btn').forEach(btn => {
       btn.addEventListener('click', () => { currentFilter = btn.dataset.filter; renderList(); });
     });
+
+    function setMainTab(tab) {
+      const isBookings = tab === 'bookings';
+      document.getElementById('bookingsPanel').classList.toggle('hidden', !isBookings);
+      document.getElementById('waiversPanel').classList.toggle('hidden', isBookings);
+      document.getElementById('tabBookings').className = 'main-tab-btn px-5 py-2.5 rounded-full text-sm font-semibold border transition ' +
+        (isBookings ? 'bg-amber-600 border-amber-600 text-white' : 'bg-slate-900 border-slate-700 text-slate-300 hover:border-amber-500/40');
+      document.getElementById('tabWaivers').className = 'main-tab-btn px-5 py-2.5 rounded-full text-sm font-semibold border transition ' +
+        (!isBookings ? 'bg-amber-600 border-amber-600 text-white' : 'bg-slate-900 border-slate-700 text-slate-300 hover:border-amber-500/40');
+      if (!isBookings) loadWaivers();
+    }
+
+    document.getElementById('tabBookings').addEventListener('click', () => setMainTab('bookings'));
+    document.getElementById('tabWaivers').addEventListener('click', () => setMainTab('waivers'));
+
+    function bookingLabelFor(bookingId) {
+      const booking = allBookings.find(b => b.id === bookingId);
+      if (!booking) return 'No linked booking';
+      const venueLabel = booking.venue === 'sports' ? 'Aulga Citi Sports' : 'Aulga Citi Event Center';
+      const dateLabel = new Date(booking.booking_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      return `${venueLabel} — ${dateLabel} at ${booking.start_time.slice(0, 5)}`;
+    }
+
+    function renderWaiversList() {
+      const listEl = document.getElementById('waiversList');
+      const emptyEl = document.getElementById('waiversEmpty');
+
+      if (allWaivers.length === 0) {
+        listEl.innerHTML = '';
+        emptyEl.classList.remove('hidden');
+        return;
+      }
+      emptyEl.classList.add('hidden');
+
+      listEl.innerHTML = allWaivers.map(w => {
+        const members = (w.member_names || [])
+          .map(n => `<span class="inline-block bg-slate-800 border border-slate-700 rounded-full px-3 py-1 text-xs text-slate-300 mr-1.5 mb-1.5">${escapeHtml(n)}</span>`)
+          .join('');
+        return `
+          <div class="bg-slate-900 rounded-2xl border border-slate-800 p-6">
+            <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+              <p class="font-display font-semibold text-white">${escapeHtml(w.lead_name)}</p>
+              <p class="text-xs text-slate-500">${new Date(w.created_at).toLocaleString()}</p>
+            </div>
+            <p class="text-sm text-slate-400 mb-3">${bookingLabelFor(w.booking_id)}${w.lead_email ? ` &middot; <a href="mailto:${encodeURIComponent(w.lead_email)}" class="hover:text-amber-400">${escapeHtml(w.lead_email)}</a>` : ''}</p>
+            <p class="text-xs uppercase tracking-wide text-slate-500 mb-1.5">Members (${(w.member_names || []).length})</p>
+            <div class="mb-3">${members}</div>
+            <p class="text-xs text-slate-500">Signature: <span class="font-display italic text-slate-300">${escapeHtml(w.signature)}</span></p>
+          </div>`;
+      }).join('');
+    }
+
+    async function loadWaivers() {
+      const errorEl = document.getElementById('waiversError');
+      errorEl.classList.add('hidden');
+      try {
+        const { data, error } = await supabaseClient
+          .from('waivers')
+          .select('*')
+          .order('created_at', { ascending: false });
+        if (error) throw error;
+        allWaivers = data || [];
+        waiversLoaded = true;
+        renderWaiversList();
+      } catch (err) {
+        console.error(err);
+        errorEl.textContent = 'Could not load waivers.';
+        errorEl.classList.remove('hidden');
+      }
+    }
 
     const addBookingModal = document.getElementById('addBookingModal');
     const addBookingForm = document.getElementById('addBookingForm');
@@ -400,6 +517,39 @@
       showDashboard();
     });
 
+    // Dedicated account whose password is the quick-access numeric code —
+    // lets someone log in without typing the real admin email/password.
+    const QUICK_CODE_EMAIL = 'quickcode@aulgaciti.local';
+
+    document.getElementById('codeLoginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const errorEl = document.getElementById('codeLoginError');
+      errorEl.classList.add('hidden');
+      const { error } = await supabaseClient.auth.signInWithPassword({
+        email: QUICK_CODE_EMAIL,
+        password: document.getElementById('loginCode').value.trim(),
+      });
+      if (error) {
+        errorEl.textContent = 'Invalid code.';
+        errorEl.classList.remove('hidden');
+        return;
+      }
+      showDashboard();
+    });
+
+    function setLoginTab(tab) {
+      const isEmail = tab === 'email';
+      document.getElementById('loginForm').classList.toggle('hidden', !isEmail);
+      document.getElementById('codeLoginForm').classList.toggle('hidden', isEmail);
+      document.getElementById('loginTabEmail').className = 'login-tab-btn flex-1 px-4 py-2 rounded-full text-xs font-semibold border transition ' +
+        (isEmail ? 'bg-amber-600 border-amber-600 text-white' : 'bg-slate-900 border-slate-700 text-slate-300 hover:border-amber-500/40');
+      document.getElementById('loginTabCode').className = 'login-tab-btn flex-1 px-4 py-2 rounded-full text-xs font-semibold border transition ' +
+        (!isEmail ? 'bg-amber-600 border-amber-600 text-white' : 'bg-slate-900 border-slate-700 text-slate-300 hover:border-amber-500/40');
+    }
+    document.getElementById('loginTabEmail').addEventListener('click', () => setLoginTab('email'));
+    document.getElementById('loginTabCode').addEventListener('click', () => setLoginTab('code'));
+    setLoginTab('email');
+
     logoutBtn.addEventListener('click', async () => {
       await supabaseClient.auth.signOut();
       showLogin();
@@ -409,6 +559,7 @@
       loginView.classList.add('hidden');
       dashboardView.classList.remove('hidden');
       logoutBtn.classList.remove('hidden');
+      setMainTab('bookings');
       loadBookings();
     }
     function showLogin() {

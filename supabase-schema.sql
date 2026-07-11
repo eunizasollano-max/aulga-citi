@@ -130,6 +130,25 @@ create policy "admin can read waivers"
   to authenticated
   using (true);
 
+-- Auto-delete waivers 2 weeks after they were submitted (runs daily at 3am UTC).
+-- pg_cron jobs run with full database privileges, so they bypass RLS like any
+-- other admin/SQL-editor action — this isn't limited by the anon/authenticated
+-- policies above.
+create extension if not exists pg_cron;
+
+do $$
+begin
+  if exists (select 1 from cron.job where jobname = 'delete-old-waivers') then
+    perform cron.unschedule('delete-old-waivers');
+  end if;
+end $$;
+
+select cron.schedule(
+  'delete-old-waivers',
+  '0 3 * * *',
+  $$ delete from waivers where created_at < now() - interval '14 days' $$
+);
+
 -- After running this file:
 -- 1. Go to Authentication -> Users in the Supabase dashboard and add one
 --    user (your admin email + a password) to log into admin.html.

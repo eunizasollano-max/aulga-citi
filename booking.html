@@ -5,6 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Check Availability & Book | Aulga Citi</title>
 <meta name="description" content="Check real-time availability and request a booking date and time for Aulga Citi Event Center or Aulga Citi Sports.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Check Availability & Book | Aulga Citi">
+<meta property="og:description" content="Check real-time availability and request a booking date and time for Aulga Citi Event Center or Aulga Citi Sports.">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Check Availability & Book | Aulga Citi">
+<meta name="twitter:description" content="Check real-time availability and request a booking date and time for Aulga Citi Event Center or Aulga Citi Sports.">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect x='4' y='4' width='92' height='92' rx='16' fill='%23ffffff' stroke='%23111827' stroke-width='8'/%3E%3Cpolygon points='16,84 30,52 44,84' fill='%235aa9d8'/%3E%3Cpolygon points='38,84 48,30 58,84' fill='%23f2ce4e'/%3E%3Crect x='41' y='55' width='10' height='29' fill='%23b8403f'/%3E%3Cpolygon points='41,55 46,44 51,55' fill='%23b8403f'/%3E%3Cpolygon points='55,86 62,54 69,66 76,54 83,86' fill='%235aa9d8'/%3E%3Crect x='71' y='58' width='16' height='30' fill='%234f9d95'/%3E%3Crect x='75' y='65' width='4' height='4' fill='%23ffffff'/%3E%3Crect x='75' y='73' width='4' height='4' fill='%23ffffff'/%3E%3Crect x='75' y='81' width='4' height='4' fill='%23ffffff'/%3E%3Crect x='82' y='65' width='3' height='3' fill='%238c2f36'/%3E%3Crect x='82' y='72' width='3' height='3' fill='%238c2f36'/%3E%3C/svg%3E">
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -236,7 +242,12 @@
       selectedHour: null, // sports only: integer hour, e.g. 9
     };
 
-    const todayStr = () => new Date().toISOString().split('T')[0];
+    // The venue operates on Philippine time regardless of a visitor's own
+    // device timezone, so "today" and "now" are always computed as PH time
+    // rather than the browser's local time or UTC.
+    const PH_TIMEZONE = 'Asia/Manila';
+    const todayStr = () => new Intl.DateTimeFormat('en-CA', { timeZone: PH_TIMEZONE }).format(new Date());
+    const currentHourPH = () => Number(new Intl.DateTimeFormat('en-US', { timeZone: PH_TIMEZONE, hour: 'numeric', hour12: false }).format(new Date()));
 
     function toDateStr(y, m, d) {
       return `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
@@ -309,15 +320,38 @@
       renderCalendar();
     }
 
+    // Recurring house schedule for the sports court — these hours are always
+    // marked booked for Full/Half court games. Event requests are exempt.
+    // Mon–Fri: 5pm–12mn. Sat–Sun: 7am–12mn.
+    function recurringBlock(dateStr, hour) {
+      const day = new Date(dateStr + 'T00:00:00').getDay();
+      const isWeekend = day === 0 || day === 6;
+      return isWeekend ? (hour >= 7 && hour < 24) : (hour >= 17 && hour < 24);
+    }
+
+    function sportsHourBlocked(dateStr, hour) {
+      return document.getElementById('courtType').value !== 'event' && recurringBlock(dateStr, hour);
+    }
+
     function dayStatus(dateStr) {
       const rows = state.availability.filter(r => r.booking_date === dateStr);
-      if (rows.length === 0) return 'open';
       if (state.venue === 'event_center') {
+        if (rows.length === 0) return 'open';
         return rows.some(r => r.status === 'confirmed') ? 'full' : 'partial';
       }
-      // sports: sum booked hours, court open 8am-12am (16 hrs)
-      const bookedHours = rows.reduce((sum, r) => sum + Number(r.duration_hours), 0);
-      if (bookedHours >= (CLOSE_HOUR - OPEN_HOUR)) return 'full';
+      // sports: count hours covered by confirmed bookings across the 8am–12am
+      // window (16 hrs). Only real confirmed bookings can mark a day 'full' —
+      // the recurring game schedule makes it 'partial' at most, so the date
+      // stays selectable for event requests (which are exempt from it).
+      let confirmedHours = 0;
+      for (let h = OPEN_HOUR; h < CLOSE_HOUR; h++) {
+        const hasConfirmed = rows.some(r => {
+          const rStart = parseInt(r.start_time.slice(0, 2), 10);
+          return r.status === 'confirmed' && h >= rStart && h < rStart + Number(r.duration_hours);
+        });
+        if (hasConfirmed) confirmedHours++;
+      }
+      if (confirmedHours >= (CLOSE_HOUR - OPEN_HOUR)) return 'full';
       return 'partial';
     }
 
@@ -386,19 +420,21 @@
 
       const slotsEl = document.getElementById('existingSlots');
       const rows = state.availability.filter(r => r.booking_date === dateStr);
-      if (rows.length === 0) {
-        slotsEl.innerHTML = '<p class="text-xs text-slate-500">No existing requests on this date yet.</p>';
-      } else {
-        slotsEl.innerHTML = rows.map(r => {
-          const badge = r.status === 'confirmed'
-            ? '<span class="text-red-400">Booked</span>'
-            : '<span class="text-amber-400">Pending</span>';
-          let court = '';
-          if (r.court_type === 'event') court = ' &middot; Event';
-          else if (r.court_type) court = ` &middot; ${r.court_type} court${r.sport_type ? ` (${r.sport_type})` : ''}`;
-          return `<p class="text-xs text-slate-400">${r.start_time.slice(0,5)} &middot; ${r.duration_hours}hr${court} &mdash; ${badge}</p>`;
-        }).join('');
+      let slotsHtml = rows.map(r => {
+        const badge = r.status === 'confirmed'
+          ? '<span class="text-red-400">Booked</span>'
+          : '<span class="text-amber-400">Pending</span>';
+        let court = '';
+        if (r.court_type === 'event') court = ' &middot; Event';
+        else if (r.court_type) court = ` &middot; ${r.court_type} court${r.sport_type ? ` (${r.sport_type})` : ''}`;
+        return `<p class="text-xs text-slate-400">${r.start_time.slice(0,5)} &middot; ${r.duration_hours}hr${court} &mdash; ${badge}</p>`;
+      }).join('');
+      if (state.venue === 'sports') {
+        const day = new Date(dateStr + 'T00:00:00').getDay();
+        const range = (day === 0 || day === 6) ? '7:00 AM &ndash; 12:00 MN' : '5:00 PM &ndash; 12:00 MN';
+        slotsHtml = `<p class="text-xs text-slate-400">${range} &middot; Regular game schedule &mdash; <span class="text-red-400">Booked</span> <span class="text-slate-500">(open for events)</span></p>` + slotsHtml;
       }
+      slotsEl.innerHTML = slotsHtml || '<p class="text-xs text-slate-500">No existing requests on this date yet.</p>';
 
       if (state.venue === 'sports') {
         syncSportsTime();
@@ -417,6 +453,8 @@
     }
 
     function hourStatus(dateStr, hour) {
+      if (dateStr === todayStr() && hour <= currentHourPH()) return 'past';
+      if (sportsHourBlocked(dateStr, hour)) return 'booked';
       const rows = state.availability.filter(r => r.booking_date === dateStr);
       let result = 'open';
       for (const r of rows) {
@@ -443,7 +481,10 @@
 
         let classes = 'h-11 rounded-lg text-xs font-semibold flex items-center justify-center transition ';
         let disabled = false;
-        if (status === 'booked') {
+        if (status === 'past') {
+          classes += 'text-slate-700 cursor-not-allowed';
+          disabled = true;
+        } else if (status === 'booked') {
           classes += 'bg-red-500/10 text-red-400 cursor-not-allowed';
           disabled = true;
         } else if (status === 'pending') {
@@ -478,7 +519,16 @@
     document.querySelectorAll('.venue-tab').forEach(btn => {
       btn.addEventListener('click', () => setVenue(btn.dataset.venue));
     });
-    document.getElementById('courtType').addEventListener('change', updateCourtSubfields);
+    document.getElementById('courtType').addEventListener('change', () => {
+      updateCourtSubfields();
+      if (state.venue === 'sports' && state.selectedDate) {
+        if (state.selectedHour !== null && hourStatus(state.selectedDate, state.selectedHour) === 'booked') {
+          state.selectedHour = null;
+          syncSportsTime();
+        }
+        renderHourGrid();
+      }
+    });
     document.getElementById('ecStartTime').addEventListener('change', syncEventCenterTime);
     document.getElementById('ecDuration').addEventListener('change', syncEventCenterTime);
     document.getElementById('sportsDuration').addEventListener('change', () => {

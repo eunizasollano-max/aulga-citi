@@ -5,6 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Liability Waiver | Aulga Citi</title>
 <meta name="description" content="Aulga Sports liability waiver and release form.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Liability Waiver | Aulga Citi">
+<meta property="og:description" content="Aulga Sports liability waiver and release form.">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Liability Waiver | Aulga Citi">
+<meta name="twitter:description" content="Aulga Sports liability waiver and release form.">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect x='4' y='4' width='92' height='92' rx='16' fill='%23ffffff' stroke='%23111827' stroke-width='8'/%3E%3Cpolygon points='16,84 30,52 44,84' fill='%235aa9d8'/%3E%3Cpolygon points='38,84 48,30 58,84' fill='%23f2ce4e'/%3E%3Crect x='41' y='55' width='10' height='29' fill='%23b8403f'/%3E%3Cpolygon points='41,55 46,44 51,55' fill='%23b8403f'/%3E%3Cpolygon points='55,86 62,54 69,66 76,54 83,86' fill='%235aa9d8'/%3E%3Crect x='71' y='58' width='16' height='30' fill='%234f9d95'/%3E%3Crect x='75' y='65' width='4' height='4' fill='%23ffffff'/%3E%3Crect x='75' y='73' width='4' height='4' fill='%23ffffff'/%3E%3Crect x='75' y='81' width='4' height='4' fill='%23ffffff'/%3E%3Crect x='82' y='65' width='3' height='3' fill='%238c2f36'/%3E%3Crect x='82' y='72' width='3' height='3' fill='%238c2f36'/%3E%3C/svg%3E">
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -141,14 +147,35 @@
     const bookingId = params.get('id') || null;
     const prefillName = params.get('name') || '';
     const prefillEmail = params.get('email') || '';
+    const bookingContext = {
+      venue: params.get('venue') || null,
+      court_type: params.get('court_type') || null,
+      sport_type: params.get('sport_type') || null,
+      booking_date: params.get('date') || null,
+      start_time: params.get('start_time') || null,
+      duration_hours: params.get('duration_hours') || null,
+    };
 
     const memberListEl = document.getElementById('memberList');
+
+    // Escapes the prefilled name before it's interpolated into innerHTML —
+    // the value can come straight from a ?name= URL parameter, so without
+    // this a crafted link could inject a script into this page.
+    function escapeHtml(value) {
+      if (value == null) return '';
+      return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
 
     function addMemberRow(value) {
       const row = document.createElement('div');
       row.className = 'flex gap-2';
       row.innerHTML = `
-        <input type="text" placeholder="Member full name" value="${value ? value.replace(/"/g, '&quot;') : ''}"
+        <input type="text" placeholder="Member full name" value="${escapeHtml(value)}"
           class="member-input flex-1 rounded-lg bg-slate-800 border border-slate-700 text-white placeholder-slate-500 px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500">
         <button type="button" class="removeMember h-10 w-10 shrink-0 flex items-center justify-center rounded-lg bg-slate-800 border border-slate-700 text-slate-400 hover:text-red-400 hover:border-red-400 transition">
           <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
@@ -167,6 +194,18 @@
     document.getElementById('leadEmail').value = prefillEmail;
 
     document.getElementById('waiverForm').classList.remove('hidden');
+
+    function notifyWaiverSigned(payload) {
+      if (!BOOKING_NOTIFY_URL || BOOKING_NOTIFY_URL.startsWith('YOUR_')) return;
+      if (!payload.lead_email) return;
+      const body = { ...payload, ...bookingContext, type: 'waiver_signed' };
+      // text/plain avoids a CORS preflight the Apps Script web app doesn't handle.
+      fetch(BOOKING_NOTIFY_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(body),
+      }).catch(err => console.error('Waiver confirmation email failed:', err));
+    }
 
     document.getElementById('waiverForm').addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -200,6 +239,7 @@
         if (error) throw error;
         document.getElementById('waiverForm').classList.add('hidden');
         document.getElementById('waiverSuccess').classList.remove('hidden');
+        notifyWaiverSigned(payload);
       } catch (err) {
         console.error(err);
         errorEl.textContent = 'Something went wrong submitting the waiver. Please try again.';
