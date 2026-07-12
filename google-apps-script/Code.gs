@@ -9,11 +9,11 @@
 // 4. Someone submits the general inquiry form on index.html -> emails you.
 // Setup instructions are in google-apps-script/SETUP.md.
 
-const NOTIFY_EMAIL = 'eunizasollano@gmail.com';
+const NOTIFY_EMAIL = 'dogmomhustler@gmail.com';
 
 // Once the site is hosted somewhere real, set this to that URL, e.g.
 // 'https://aulgaciti.com' or 'https://yourname.github.io/aulga-citi'.
-const SITE_BASE_URL = 'https://eunizasollano-max.github.io/aulga-citi';
+const SITE_BASE_URL = 'https://aulgaciti.space';
 
 function doPost(e) {
   try {
