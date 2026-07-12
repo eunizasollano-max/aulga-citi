@@ -6,4 +6,4 @@ const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_
 
 // Google Apps Script web app URL from google-apps-script/SETUP.md.
 // Leave as-is to skip email notifications (bookings still save fine).
-const BOOKING_NOTIFY_URL = 'https://script.google.com/macros/s/AKfycbxDcO7kBCqbCqm4khC1uvbwwEweLwnNXQRRL34CGGu1egmFac3f9gVJlHptfvuXc2s/exec';
+const BOOKING_NOTIFY_URL = 'https://script.google.com/macros/s/AKfycby607iaWgFLCWDYN_VbC61MAT0xSwCCo9PvKZferH7PGFOtqa8Vy8FpL4Gm1JEua9I/exec';
